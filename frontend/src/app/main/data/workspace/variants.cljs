@@ -14,6 +14,7 @@
    [app.common.logic.variants :as clv]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -22,6 +23,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.util.dom :as dom]
@@ -144,6 +146,27 @@
       (dom/focus! (dom/get-element (str "variant-prop-" shape-id prop-num))))))
 
 
+(defn- resposition-and-resize-variant
+  "Resize the variant container, and move the shape (that is a variant) to the right"
+  [shape-id]
+  (ptk/reify ::resposition-and-resize-variant
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id   (:current-page-id state)
+            data      (dsh/lookup-file-data state)
+            objects   (-> (dsh/get-page data page-id)
+                          (get :objects))
+            shape     (get objects shape-id)
+            container (get objects (:parent-id shape))
+            width     (+ (:width container) (:width shape) 20) ;; 20 is the default gap for variants
+            x         (- width (+ (:width shape) 30))]         ;; 30 is the default margin for variants
+        (rx/of
+         (dwt/update-dimensions [(:parent-id shape)] :width width)
+         (dwt/update-position shape-id
+                              {:x x}
+                              {:absolute? false}))))))
+
+
 (defn add-new-variant
   "Create a new variant and add it to the variant-container"
   [shape-id]
@@ -161,6 +184,10 @@
             component-id        (:component-id shape)
             component           (ctkl/get-component data component-id)
 
+            container-id        (:parent-id shape)
+            variant-container   (get objects container-id)
+            has-layout?         (ctsl/any-layout? variant-container)
+
             new-component-id    (uuid/next)
             new-shape-id        (uuid/next)
 
@@ -177,6 +204,8 @@
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (dch/commit-changes changes)
+          (when-not has-layout?
+            (resposition-and-resize-variant new-shape-id))
           (dwu/commit-undo-transaction undo-id)
           (ptk/data-event :layout/update {:ids [(:parent-id shape)]})
           (dws/select-shape new-shape-id))
