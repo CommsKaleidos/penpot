@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.types.component :as ctc]
@@ -346,3 +347,15 @@
            (rx/from (map add-new-variant selected-ids))
            (rx/of (dwu/commit-undo-transaction undo-id)))
           (rx/of (dws/duplicate-selected true)))))))
+
+(defn rename-all-variants
+  [variant-id new-name]
+  (ptk/reify ::rename-all-variants
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [data               (dsh/lookup-file-data state)
+            objects            (dsh/lookup-page-objects state)
+            variant-components (cfv/find-variant-components data objects variant-id)]
+        (rx/from (map
+                  #(dwl/rename-component-and-main-instance (:id %) new-name)
+                  variant-components))))))

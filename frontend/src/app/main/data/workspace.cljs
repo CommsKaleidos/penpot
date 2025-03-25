@@ -25,6 +25,7 @@
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.transit :as t]
+   [app.common.types.component :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -74,6 +75,7 @@
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwva]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.errors]
@@ -764,27 +766,37 @@
   ([] (end-rename-shape nil nil))
   ([shape-id name]
    (ptk/reify ::end-rename-shape
+     ptk/UpdateEvent
+     (update [_ state]
+       ;; Remove rename state from workspace local state
+       (update state :workspace-local dissoc :shape-for-rename))
      ptk/WatchEvent
      (watch [_ state _]
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
-         (let [shape (dsh/lookup-shape state shape-id)
-               name        (str/trim name)
-               clean-name  (cfh/clean-path name)
-               valid?      (and (not (str/ends-with? name "/"))
-                                (string? clean-name)
-                                (not (str/blank? clean-name)))]
-           (rx/concat
-            ;; Remove rename state from workspace local state
-            (rx/of #(update % :workspace-local dissoc :shape-for-rename))
+         (let [shape        (dsh/lookup-shape state shape-id)
+               name         (str/trim name)
+               clean-name   (cfh/clean-path name)
+               valid?       (and (not (str/ends-with? name "/"))
+                                 (string? clean-name)
+                                 (not (str/blank? clean-name)))
+               component-id (:component-id shape)
+               undo-id (js/Symbol)]
+           (rx/of
+            (dwu/start-undo-transaction undo-id)
 
             ;; Rename the shape if string is not empty/blank
             (when valid?
-              (rx/of (update-shape shape-id {:name clean-name})))
+              (update-shape shape-id {:name clean-name}))
 
-            ;; Update the component in case if shape is a main instance
-            (when (and valid? (:main-instance shape))
-              (when-let [component-id (:component-id shape)]
-                (rx/of (dwl/rename-component component-id clean-name)))))))))))
+            ;; Update the component in case shape is a main instance
+            (when (and valid? (some? component-id) (ctc/main-instance? shape))
+              (dwl/rename-component component-id clean-name))
+
+            ;; Rename the variants in case shape is a variant container
+            (when (and valid?  (ctc/is-variant-container? shape))
+              (dwva/rename-all-variants shape-id clean-name))
+
+            (dwu/commit-undo-transaction undo-id))))))))
 
 ;; --- Update Selected Shapes attrs
 
