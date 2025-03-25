@@ -565,7 +565,9 @@
      -It should have at least one variant property"
   [component file]
   (let [component-page (ctf/get-component-page (:data file) component)
-        main-component (ctst/get-shape component-page (:main-instance-id component))]
+        main-component (if (:deleted component)
+                         (dm/get-in component [:objects (:main-instance-id component)])
+                         (ctst/get-shape component-page (:main-instance-id component)))]
     (when-not (ctk/is-variant? main-component)
       (report-error :not-a-variant
                     (str/ffmt "Shape % should be a variant" (:id main-component))
