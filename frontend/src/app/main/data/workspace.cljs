@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
@@ -26,7 +27,6 @@
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
-   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -549,7 +549,7 @@
             name               (cfh/generate-unique-name base-name unames :suffix-fn suffix-fn)
             objects            (update-vals (:objects page) #(dissoc % :use-for-thumbnail))
 
-            main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
+            main-instances-ids (set (keep #(when (ctc/main-instance? (val %)) (key %)) objects))
             ids-to-remove      (set (apply concat (map #(cfh/get-children-ids objects %) main-instances-ids)))
 
             add-component-copy
@@ -1188,22 +1188,26 @@
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            fdata   (dsh/lookup-file-data state file-id)
-            cpath   (dm/get-in fdata [:components component-id :path])
-            cpath   (cfh/split-path cpath)
-            paths   (map (fn [i] (cfh/join-path (take (inc i) cpath)))
-                         (range (count cpath)))]
+      (let [file-id   (:current-file-id state)
+            fdata     (dsh/lookup-file-data state file-id)
+            component (cfv/get-primary-component fdata component-id)
+            cpath     (:path component)
+            cpath     (cfh/split-path cpath)
+            paths     (map (fn [i] (cfh/join-path (take (inc i) cpath)))
+                           (range (count cpath)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))
          (rx/of (dcm/go-to-workspace :layout :assets)
                 (set-assets-section-open file-id :library true)
                 (set-assets-section-open file-id :components true)
-                (select-single-asset file-id component-id :components)))))
+                (select-single-asset file-id (:id component) :components)))))
 
     ptk/EffectEvent
-    (effect [_ _ _]
-      (let [wrapper-id (str "component-shape-id-" component-id)]
+    (effect [_ state _]
+      (let [file-id   (:current-file-id state)
+            fdata     (dsh/lookup-file-data state file-id)
+            component (cfv/get-primary-component fdata component-id)
+            wrapper-id (str "component-shape-id-" (:id component))]
         (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1370,7 +1374,7 @@
                                heads))))
 
           (advance-copy [file libraries page objects shape]
-            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+            (if (and (ctc/instance-head? shape) (not (ctc/main-instance? shape)))
               (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
                 (if (pos? level-delta)
                   (reduce (partial advance-shape file libraries page level-delta)
@@ -2100,7 +2104,7 @@
               undo-id      (js/Symbol)]
 
           (rx/concat
-           (->> (filter ctk/instance-head? orig-shapes)
+           (->> (filter ctc/instance-head? orig-shapes)
                 (map (fn [{:keys [component-file]}]
                        (ptk/event ::ev/event
                                   {::ev/name "use-library-component"
@@ -2415,7 +2419,7 @@
       (let [objects (dsh/lookup-page-objects state)
             copies  (->> objects
                          vals
-                         (filter #(and (ctk/instance-head? %) (not (ctk/main-instance? %)))))
+                         (filter #(and (ctc/instance-head? %) (not (ctc/main-instance? %)))))
 
             copies-no-ref (filter #(not (:shape-ref %)) copies)
             find-childs-no-ref (fn [acc-map item]
