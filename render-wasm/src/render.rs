@@ -454,17 +454,9 @@ impl RenderState {
             },
         );
 
-        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox(self.viewbox);
+        // TODO: Maybe we should calculate the interest area based on the actual viewport. See how.
+        let (sx, sy, ex, ey) = tiles::get_tiles_for_viewbox_with_interest(self.viewbox, 1);
         debug::render_debug_tiles_for_viewbox(self, sx, sy, ex, ey);
-        /*
-        // TODO: Instead of rendering only the visible area
-        // we could apply an offset to the viewbox to render
-        // more tiles.
-        sx - interest_delta
-        sy - interest_delta
-        ex + interest_delta
-        ey + interest_delta
-        */
         self.pending_tiles = vec![];
         self.surfaces.cache_clear_visited();
         for y in sy..=ey {
