@@ -225,7 +225,7 @@
             page-id      (:current-page-id state)
             objects      (dsh/lookup-page-objects state file-id page-id)
             main         (get objects main-instance-id)
-            main-id      (:id main)
+            parent       (get objects (:parent-id main))
             component-id (:component-id main)
             cpath        (cfh/split-path (:name main))
             name         (first cpath)
@@ -266,9 +266,16 @@
           (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
           (dwsl/create-layout-from-id variant-id :flex)
           (dwsh/update-shapes variant-vec #(merge % cont-props))
-          (dwsh/update-shapes [main-id] #(merge % main-props))
+          (dwsh/update-shapes [main-instance-id] #(merge % main-props))
           (cl/add-stroke variant-vec stroke-props)
-          (set-variant-id component-id variant-id))
+          (set-variant-id component-id variant-id)
+
+          ;; Set the position of the variant container so the main shape doesn't
+          ;; change its position
+          (when-not (ctsl/any-layout? parent)
+            (dwt/update-position variant-id
+                                 {:x (- (:x main) 30) :y (- (:y main) 30)}
+                                 {:absolute? true})))
 
          ;; Add the necessary number of new properties, with default values
          (rx/from
