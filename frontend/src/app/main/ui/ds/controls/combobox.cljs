@@ -60,6 +60,7 @@
    [:id {:optional true} :string]
    [:options [:vector schema:combobox-option]]
    [:class {:optional true} :string]
+   [:max-length {:optional true} :int]
    [:placeholder {:optional true} :string]
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
@@ -69,7 +70,7 @@
 (mf/defc combobox*
   {::mf/props :obj
    ::mf/schema schema:combobox}
-  [{:keys [id options class placeholder disabled has-error default-selected on-change] :rest props}]
+  [{:keys [id options class placeholder disabled has-error default-selected on-change max-length] :rest props}]
   (let [open* (mf/use-state false)
         open  (deref open*)
 
@@ -240,6 +241,7 @@
                 :aria-activedescendant focused
                 :class (stl/css :input)
                 :data-testid "combobox-input"
+                :maxlength (d/nilv max-length 256)
                 :disabled disabled
                 :value selected
                 :on-change on-input-change

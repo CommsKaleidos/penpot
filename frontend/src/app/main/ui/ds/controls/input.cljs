@@ -20,13 +20,14 @@
    [:icon {:optional true}
     [:and :string [:fn #(contains? icon-list %)]]]
    [:type {:optional true} :string]
+   [:max-length {:optional true} :int]
    [:variant {:optional true} :string]])
 
 (mf/defc input*
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema:input}
-  [{:keys [icon class type variant] :rest props} ref]
+  [{:keys [icon class type max-length variant] :rest props} ref]
   (let [ref   (or ref (mf/use-ref))
         type  (d/nilv type "text")
         props (mf/spread-props props
@@ -34,6 +35,7 @@
                                         :input true
                                         :input-with-icon (some? icon))
                                 :ref ref
+                                :maxlength (d/nilv max-length "255")
                                 :type type})
 
         on-icon-click
