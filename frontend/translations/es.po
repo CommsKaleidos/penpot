@@ -1672,6 +1672,9 @@ msgstr "Mayúsculas"
 msgid "inspect.attributes.variant"
 msgstr "Propiedades de la variante"
 
+msgid "inspect.attributes.variants"
+msgstr "Propiedades de las variantes"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:163
 msgid "inspect.empty.help"
 msgstr ""
