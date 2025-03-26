@@ -54,7 +54,7 @@
   {::mf/wrap-props false}
   [{:keys [component renaming listing-thumbs? selected
            file-id on-asset-click on-context-menu on-drag-start do-rename
-           cancel-rename selected-full selected-paths is-local]}]
+           cancel-rename selected-full selected-paths is-local num-variants]}]
 
   (let [item-ref       (mf/use-ref)
 
@@ -129,7 +129,8 @@
     [:div {:ref item-ref
            :class (stl/css-case :selected (contains? selected (:id component))
                                 :grid-cell listing-thumbs?
-                                :enum-item (not listing-thumbs?))
+                                :enum-item (not listing-thumbs?)
+                                :enum-item-with-mark (and (not listing-thumbs?) (ctc/is-variant? component)))
            :id (dm/str "component-shape-id-" (:id component))
            :draggable (and (not read-only?) (not renaming?))
            :on-click on-component-click
@@ -166,13 +167,16 @@
           :root-shape root-shape
           :component component
           :container container
-          :is-hidden (not visible?)}]])]))
+          :is-hidden (not visible?)}]
+        (when (ctc/is-variant? component)
+          [:span {:class (stl/css-case :variant-mark-cell listing-thumbs? :variant-mark true :component-icon true)
+                  :title (tr "workspace.assets.components.num-variants" num-variants)} i/variant])])]))
 
 (mf/defc components-group
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
-           selected-full is-local]}]
+           selected-full is-local count-variants]}]
 
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -220,7 +224,6 @@
        :on-rename on-rename-group
        :on-ungroup on-ungroup}]
 
-
      (when group-open?
        [:*
         (let [components (not-empty (get groups "" []))]
@@ -257,7 +260,8 @@
                :on-group on-group
                :do-rename do-rename
                :cancel-rename cancel-rename
-               :is-local is-local}])])
+               :is-local is-local
+               :num-variants (count-variants (:variant-id component))}])])
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
@@ -278,13 +282,14 @@
                                   :on-ungroup on-ungroup
                                   :on-context-menu on-context-menu
                                   :selected-full selected-full
-                                  :is-local is-local}]))])]))
+                                  :is-local is-local
+                                  :count-variants count-variants}]))])]))
 
 (mf/defc components-section
   {::mf/wrap-props false}
   [{:keys [file-id is-local components listing-thumbs? open? force-open?
            reverse-sort? selected on-asset-click on-assets-delete
-           on-clear-selection open-status-ref]}]
+           on-clear-selection open-status-ref count-variants]}]
 
   (let [input-ref                (mf/use-ref nil)
 
@@ -544,7 +549,8 @@
                               :on-ungroup on-ungroup
                               :on-context-menu on-context-menu
                               :selected-full selected-full
-                              :is-local ^boolean is-local}])
+                              :is-local ^boolean is-local
+                              :count-variants count-variants}])
 
       [:& cmm/assets-context-menu
        {:on-close on-close-menu

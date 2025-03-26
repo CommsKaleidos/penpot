@@ -4380,6 +4380,9 @@ msgstr "Components"
 msgid "workspace.assets.components.add-component"
 msgstr "Add component"
 
+msgid "workspace.assets.components.num-variants"
+msgstr "%s Variants"
+
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
 msgid "workspace.assets.create-group"
 msgstr "Create a group"
