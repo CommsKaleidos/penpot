@@ -466,7 +466,7 @@
       (report-error :variant-bad-name
                     (str/ffmt "Variant % has an invalid name" (:id shape))
                     shape file page))
-    (when-not (= (:name parent) (:name component))
+    (when-not (= (:name parent) (cfh/merge-path-item (:path component) (:name component)))
       (report-error :variant-component-bad-name
                     (str/ffmt "Component % has an invalid name" (:id shape))
                     shape file page))))

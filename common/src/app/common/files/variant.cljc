@@ -77,7 +77,7 @@
   (when-let [component (ctcl/get-component data component-id)]
     (if (ctc/is-variant? component)
       (->> component
-          (get-primary-variant data)
-          :component-id
-          (ctcl/get-component data))
+           (get-primary-variant data)
+           :component-id
+           (ctcl/get-component data))
       component)))

@@ -152,7 +152,7 @@
   [shape-id]
   (ptk/reify ::resposition-and-resize-variant
     ptk/WatchEvent
-    (watch [it state _]
+    (watch [_ state _]
       (let [page-id   (:current-page-id state)
             data      (dsh/lookup-file-data state)
             objects   (-> (dsh/get-page data page-id)
@@ -348,14 +348,37 @@
            (rx/of (dwu/commit-undo-transaction undo-id)))
           (rx/of (dws/duplicate-selected true)))))))
 
-(defn rename-all-variants
-  [variant-id new-name]
-  (ptk/reify ::rename-all-variants
+
+(defn rename-variant
+  [variant-id name]
+  (ptk/reify ::rename-variant
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [data               (dsh/lookup-file-data state)
             objects            (dsh/lookup-page-objects state)
-            variant-components (cfv/find-variant-components data objects variant-id)]
-        (rx/from (map
-                  #(dwl/rename-component-and-main-instance (:id %) new-name)
-                  variant-components))))))
+            variant-components (cfv/find-variant-components data objects variant-id)
+            clean-name         (cfh/clean-path name)
+            undo-id            (js/Symbol)]
+
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwsh/update-shapes [variant-id] #(assoc % :name clean-name)))
+         (rx/from (map
+                   #(dwl/rename-component-and-main-instance (:id %) clean-name)
+                   variant-components))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
+
+(defn rename-comp-or-variant-and-main
+  [component-id name]
+  (ptk/reify ::rename-comp-or-variant-and-main
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [data               (dsh/lookup-file-data state)
+            component          (ctkl/get-component data component-id)]
+        (if (ctc/is-variant? component)
+          (rx/of (rename-variant (:variant-id component) name))
+          (rx/of (dwl/rename-component-and-main-instance component-id name)))))))
+

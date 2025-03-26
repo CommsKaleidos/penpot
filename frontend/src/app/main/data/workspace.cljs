@@ -781,22 +781,21 @@
                                  (not (str/blank? clean-name)))
                component-id (:component-id shape)
                undo-id (js/Symbol)]
-           (rx/of
-            (dwu/start-undo-transaction undo-id)
 
-            ;; Rename the shape if string is not empty/blank
-            (when valid?
-              (update-shape shape-id {:name clean-name}))
 
-            ;; Update the component in case shape is a main instance
-            (when (and valid? (some? component-id) (ctc/main-instance? shape))
-              (dwl/rename-component component-id clean-name))
+           (when valid?
+             (if (ctc/is-variant-container? shape)
+               ;; Rename the full variant when it is a variant container
+               (rx/of (dwva/rename-variant shape-id clean-name))
+               (rx/of
+                (dwu/start-undo-transaction undo-id)
+                ;; Rename the shape if string is not empty/blank
+                (update-shape shape-id {:name clean-name})
 
-            ;; Rename the variants in case shape is a variant container
-            (when (and valid?  (ctc/is-variant-container? shape))
-              (dwva/rename-all-variants shape-id clean-name))
-
-            (dwu/commit-undo-transaction undo-id))))))))
+                ;; Update the component in case shape is a main instance
+                (when (and (some? component-id) (ctc/main-instance? shape))
+                  (dwl/rename-component component-id clean-name))
+                (dwu/commit-undo-transaction undo-id))))))))))
 
 ;; --- Update Selected Shapes attrs
 

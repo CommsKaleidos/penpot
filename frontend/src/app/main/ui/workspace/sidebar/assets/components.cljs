@@ -19,6 +19,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-label :refer [editable-label]]
@@ -95,7 +96,7 @@
          (fn [event]
            (when (and is-local (:is-local @drag-data*))
              (cmm/on-drop-asset event component dragging* selected selected-full
-                                selected-paths dwl/rename-component-and-main-instance))))
+                                selected-paths dwv/rename-comp-or-variant-and-main))))
 
         on-drag-enter
         (mf/use-fn
@@ -209,7 +210,7 @@
          (mf/deps dragging* prefix selected-paths selected-full is-local drag-data*)
          (fn [event]
            (when (and is-local (:is-local @drag-data*))
-             (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwl/rename-component-and-main-instance))))]
+             (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwv/rename-comp-or-variant-and-main))))]
 
     [:div {:class (stl/css :component-group)
            :on-drag-enter on-drag-enter
@@ -384,7 +385,7 @@
            (swap! state* dissoc :renaming)
            (when (not (str/blank? new-name))
              (st/emit!
-              (dwl/rename-component-and-main-instance current-component-id new-name)))))
+              (dwv/rename-comp-or-variant-and-main current-component-id new-name)))))
 
         on-context-menu
         (mf/use-fn
@@ -413,7 +414,7 @@
                         (filter #(if multi-components?
                                    (contains? selected (:id %))
                                    (= current-component-id (:id %))))
-                        (map #(dwl/rename-component-and-main-instance
+                        (map #(dwv/rename-comp-or-variant-and-main
                                (:id %)
                                (cmm/add-group % group-name)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
@@ -428,7 +429,7 @@
              (run! st/emit!
                    (->> components
                         (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component-and-main-instance
+                        (map #(dwv/rename-comp-or-variant-and-main
                                (:id %)
                                (cmm/rename-group % path last-path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
@@ -459,7 +460,7 @@
              (run! st/emit!
                    (->> components
                         (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component-and-main-instance (:id %) (cmm/ungroup % path)))))
+                        (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-drag-start
@@ -570,7 +571,7 @@
                     {:name    (tr "workspace.assets.delete")
                      :id      "assets-delete-component"
                      :handler on-delete})
-                  (when (and is-local (not (or multi-assets? read-only? any-variant?)))
+                  (when (and is-local (not (or multi-assets? read-only?)))
                     {:name   (tr "workspace.assets.group")
                      :id     "assets-group-component"
                      :handler on-group})
