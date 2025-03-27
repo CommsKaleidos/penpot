@@ -64,6 +64,7 @@ impl TextContent {
 
     pub fn to_paragraphs(&self, fonts: &FontCollection) -> Vec<skia::textlayout::Paragraph> {
         let mut paragraph_style = ParagraphStyle::default();
+        // FIXME
         // TODO: read text direction, align, etc. from the shape
         paragraph_style.set_text_direction(skia::textlayout::TextDirection::LTR);
 
