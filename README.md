@@ -29,6 +29,7 @@
     <a href="https://instagram.com/penpot.app"><b>Instagram</b></a>  •  
     <a href="https://fosstodon.org/@penpot/"><b>Mastodon</b></a>  •  
     <a href="https://twitter.com/penpotapp"><b>X</b></a>
+    <a href="https://bsky.app/profile/penpot.app"><b>X</b></a>
 
 </p>
 
