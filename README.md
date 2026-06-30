@@ -38,8 +38,7 @@
 
 <br />
 
-Penpot is the first **open-source** design tool for design and code collaboration. Designers can create stunning designs, interactive prototypes, design systems at scale, while developers enjoy ready-to-use code and make their workflow easy and fast. And all of this with no handoff drama.
-
+Penpot is the **open-source design platform for teams** building digital products at scale, with open standards, deeper design-code-AI collaboration, self-hosting options, and the flexibility to create workflows without vendor lock-in. 
 Penpot is available on browser and [self host](https://penpot.app/self-host). It’s web-based and works with open standards (SVG, CSS and HTML). And last but not least, it’s free! 
 
 Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/penpot-2.0), a complete UI redesign, a new Components system, and much more. Plus, it's faster and more accessible. 
